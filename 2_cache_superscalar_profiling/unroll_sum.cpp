@@ -14,31 +14,31 @@ int common_algo(int *arr, int len)
 int unroll_algo_2(int *arr, int len)
 {
     int total[2] = {0};
-    for (int i = 0; i < len - 2; i += 2)
+    for (int i = 0; i < len; i += 2)
     {
         total[0] += arr[i + 0];
         total[1] += arr[i + 1];
     }
-    return common_algo(total, len / 2);
+    return common_algo(total, 2);
 }
 
 int unroll_algo_4(int *arr, int len)
 {
     int total[4] = {0};
-    for (int i = 0; i < len - 4; i += 4)
+    for (int i = 0; i < len; i += 4)
     {
         total[0] += arr[i + 0];
         total[1] += arr[i + 1];
         total[2] += arr[i + 2];
         total[3] += arr[i + 3];
     }
-    return common_algo(total, len / 4);
+    return common_algo(total, 4);
 }
 
 int unroll_algo_8(int *arr, int len)
 {
     int total[8] = {0};
-    for (int i = 0; i < len - 8; i += 8)
+    for (int i = 0; i < len; i += 8)
     {
         total[0] += arr[i + 0];
         total[1] += arr[i + 1];
@@ -49,13 +49,13 @@ int unroll_algo_8(int *arr, int len)
         total[6] += arr[i + 6];
         total[7] += arr[i + 7];
     }
-    return common_algo(total, len / 8);
+    return common_algo(total, 8);
 }
 
 int unroll_algo_16(int *arr, int len)
 {
     int total[16] = {0};
-    for (int i = 0; i < len - 16; i += 16)
+    for (int i = 0; i < len; i += 16)
     {
         total[0] += arr[i + 0];
         total[1] += arr[i + 1];
@@ -74,13 +74,13 @@ int unroll_algo_16(int *arr, int len)
         total[14] += arr[i + 14];
         total[15] += arr[i + 15];
     }
-    return common_algo(total, len / 16);
+    return common_algo(total, 16);
 }
 
 int unroll_algo_32(int *arr, int len)
 {
     int total[32] = {0};
-    for (int i = 0; i < len - 32; i += 32)
+    for (int i = 0; i < len; i += 32)
     {
         total[0] += arr[i + 0];
         total[1] += arr[i + 1];
@@ -115,13 +115,13 @@ int unroll_algo_32(int *arr, int len)
         total[30] += arr[i + 30];
         total[31] += arr[i + 31];
     }
-    return common_algo(total, len / 32);
+    return common_algo(total, 32);
 }
 
 int unroll_algo_64(int *arr, int len)
 {
     int total[64] = {0};
-    for (int i = 0; i < len - 64; i += 64)
+    for (int i = 0; i < len; i += 64)
     {
         total[0] += arr[i + 0];
         total[1] += arr[i + 1];
@@ -188,13 +188,13 @@ int unroll_algo_64(int *arr, int len)
         total[62] += arr[i + 62];
         total[63] += arr[i + 63];
     }
-    return common_algo(total, len / 64);
+    return common_algo(total, 64);
 }
 
 int unroll_algo_128(int *arr, int len)
 {
     int total[128] = {0};
-    for (int i = 0; i < len - 128; i += 128)
+    for (int i = 0; i < len; i += 128)
     {
         total[0] += arr[i + 0];
         total[1] += arr[i + 1];
@@ -325,13 +325,13 @@ int unroll_algo_128(int *arr, int len)
         total[126] += arr[i + 126];
         total[127] += arr[i + 127];
     }
-    return common_algo(total, len / 128);
+    return common_algo(total, 128);
 }
 
 int unroll_algo_256(int *arr, int len)
 {
     int total[256] = {0};
-    for (int i = 0; i < len - 256; i += 256)
+    for (int i = 0; i < len; i += 256)
     {
         total[0] += arr[i + 0];
         total[1] += arr[i + 1];
@@ -590,13 +590,13 @@ int unroll_algo_256(int *arr, int len)
         total[254] += arr[i + 254];
         total[255] += arr[i + 255];
     }
-    return common_algo(total, len / 256);
+    return common_algo(total, 256);
 }
 
 int unroll_algo_512(int *arr, int len)
 {
     int total[512] = {0};
-    for (int i = 0; i < len - 512; i += 512)
+    for (int i = 0; i < len; i += 512)
     {
         total[0] += arr[i + 0];
         total[1] += arr[i + 1];
@@ -1111,13 +1111,13 @@ int unroll_algo_512(int *arr, int len)
         total[510] += arr[i + 510];
         total[511] += arr[i + 511];
     }
-    return common_algo(total, len / 512);
+    return common_algo(total, 512);
 }
 
 int unroll_algo_1024(int *arr, int len)
 {
     int total[1024] = {0};
-    for (int i = 0; i < len - 1024; i += 1024)
+    for (int i = 0; i < len; i += 1024)
     {
         total[0] += arr[i + 0];
         total[1] += arr[i + 1];
@@ -2144,13 +2144,13 @@ int unroll_algo_1024(int *arr, int len)
         total[1022] += arr[i + 1022];
         total[1023] += arr[i + 1023];
     }
-    return common_algo(total, len / 1024);
+    return common_algo(total, 1024);
 }
 
 int unroll_algo_2048(int *arr, int len)
 {
     int total[2048] = {0};
-    for (int i = 0; i < len - 2048; i += 2048)
+    for (int i = 0; i < len; i += 2048)
     {
         total[0] += arr[i + 0];
         total[1] += arr[i + 1];
@@ -4201,13 +4201,13 @@ int unroll_algo_2048(int *arr, int len)
         total[2046] += arr[i + 2046];
         total[2047] += arr[i + 2047];
     }
-    return common_algo(total, len / 2048);
+    return common_algo(total, 2048);
 }
 
 int unroll_algo_4096(int *arr, int len)
 {
     int total[4096] = {0};
-    for (int i = 0; i < len - 4096; i += 4096)
+    for (int i = 0; i < len; i += 4096)
     {
         total[0] += arr[i + 0];
         total[1] += arr[i + 1];
@@ -8306,13 +8306,13 @@ int unroll_algo_4096(int *arr, int len)
         total[4094] += arr[i + 4094];
         total[4095] += arr[i + 4095];
     }
-    return common_algo(total, len / 4096);
+    return common_algo(total, 4096);
 }
 
 int unroll_algo_8192(int *arr, int len)
 {
     int total[8192] = {0};
-    for (int i = 0; i < len - 8192; i += 8192)
+    for (int i = 0; i < len; i += 8192)
     {
         total[0] += arr[i + 0];
         total[1] += arr[i + 1];
@@ -16507,5 +16507,5 @@ int unroll_algo_8192(int *arr, int len)
         total[8190] += arr[i + 8190];
         total[8191] += arr[i + 8191];
     }
-    return common_algo(total, len / 8192);
+    return common_algo(total, 8192);
 }

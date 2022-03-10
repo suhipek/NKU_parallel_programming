@@ -1,4 +1,4 @@
-# generate unroll_sum.cpp with the function definations in unroll_sum.h
+# generate unroll_sum.cpp according to the function definations in unroll_sum.h
 
 import re
 
@@ -20,11 +20,11 @@ func = """
 int unroll_algo_$NUM$(int *arr, int len)
 {
     int total[$NUM$] = {0};
-    for (int i = 0; i < len - $NUM$; i+=$NUM$)
+    for (int i = 0; i < len; i+=$NUM$)
     {
         $REPEAT$
     }
-    return common_algo(total, len/$NUM$);
+    return common_algo(total, $NUM$);
 }
 """
 
