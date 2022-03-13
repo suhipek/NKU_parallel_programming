@@ -158,11 +158,13 @@ rulesepcolor= \color{ red!20!green!20!blue!20}
 \section{以性能为目标的异构并行计算机}
 %——————————————————————————————————————
 \subsection{超级计算机的异构}
-2008年，随着680块Tesla T10 GPU被安装到位于东京工业大学Tsubame(意为“燕子”)超级电脑，超算榜单TOP500上首次出现了GPU的踪迹。GPU虽然在通用运算能力上不及传统的CPU，但其具有的众核架构使得其在并行运算上比CPU快上一个数量级。GPU这样的特性也Tsubame的算力升级到了170 TFLOPS，并成功跻身世界前三十强的超算。\cite{tsubame_wiki}
+2008年，随着680块Tesla T10 GPU被安装到位于东京工业大学Tsubame(意为“燕子”)超级电脑，超算榜单TOP500上首次出现了GPU的踪迹。在这次的升级后，Tsubame的总算力提升到了170 TFLOPS，并成功跻身世界前三十强的超算。\cite{tsubame_wiki}
 
-而随着时间的发展，引入了GPU和协处理器的异构超算已经成为了高性能运算领域热门的选择。在2019年十月发布的的TOP500榜单中，排名前十的超级计算机，有七台都是异构超算。在这七台异构超算中，中国的天河2号使用了Xeon Phi 31S1P与Matrix-2000协处理器，NEC的SX-AURORA TSUBASA则在芯片中集成了向量加速引擎，剩下的五台使用则的是英伟达GPU。\cite{supercom_gpu}
+GPU之所以能给超级计算机带来如此强劲的算力，主要是因为GPU在设计之初就采用了和CPU不同的设计思路。当CPU的设计者们在通过提升频率和和新增功能来提升运算的延迟时，GPU的设计者们则在通过精简核心和提升核心数量来提高运算的吞吐量。由于晶体管在开关时，其寄生电容内的能量被浪费了，而频率越高，浪费越多；再加上CPU越来越复杂的设计很难再带来性能上较大的提升，GPU的优势便开始凸显了。虽然GPU在通用运算能力上不及传统的CPU，但其具有的众核架构使得其在某些特殊问题的求解上比CPU快上一个数量级。
 
-在相同功耗下，异构超算在浮点性能上的收益非常之大。以天河2号和2018年到2020年位列TOP500榜单第一的Summit(高峰)超级计算机为例：
+而随着时间的发展，引入了GPU和协处理器的异构超算已然成为了高性能运算领域热门的选择。在2019年十月发布的的TOP500榜单中，排名前十的超级计算机，有七台都是异构超算。在这七台异构超算中，中国的天河2号使用了Xeon Phi 31S1P与Matrix-2000协处理器，NEC的SX-AURORA TSUBASA则在芯片中集成了向量加速引擎，剩下的五台则全使用了英伟达GPU。\cite{supercom_gpu}
+
+在相同功耗下，协处理器和GPU在性能上的收益非常之大。以天河2号和2018年到2020年位列TOP500榜单第一的Summit(高峰)超级计算机所使用到的的几种处理器为例：
 % 如图\ref{fig:1}所示
 % \begin{figure}[H]
 %     \centering
@@ -210,7 +212,7 @@ rulesepcolor= \color{ red!20!green!20!blue!20}
 \begin{table}[!htbp]
 \begin{tabular}{@{}lllllll@{}}
 \toprule
-处理器         & 超算                      & 类型                    & \begin{tabular}[c]{@{}l@{}}单节点\\ \\ 数量\end{tabular} & \begin{tabular}[c]{@{}l@{}}双精度浮点性能\\ \\ /TFlops\end{tabular} & \begin{tabular}[c]{@{}l@{}}功耗\\ \\ /W\end{tabular} & \begin{tabular}[c]{@{}l@{}}每瓦双精浮点性能\\ \\ /GFlops/W\end{tabular} \\ \midrule
+处理器         & 超算                      & 类型                    & \begin{tabular}[c]{@{}l@{}}单节点\\ 数量\end{tabular} & \begin{tabular}[c]{@{}l@{}}双精度浮点性能\\ /TFlops\end{tabular} & \begin{tabular}[c]{@{}l@{}}TDP\\ /W\end{tabular} & \begin{tabular}[c]{@{}l@{}}每瓦双精浮点性能\\ GFlops/W\end{tabular} \\ \midrule
 Xeon E5     & \multirow{3}{*}{天河2号}   & CPU                   & 2                                                   & 0.21                                                         & 145                                                & 1.45                                                            \\
 Xeon Phi    &                         & \multirow{2}{*}{协处理器} & 3                                                   & 1                                                            & 300                                                & 3.33                                                            \\
 Matrix-2000 &                         &                       & 3                                                   & 2.4                                                          & 200                                                & 12                                                              \\ 
@@ -224,14 +226,26 @@ Tesla V100s &                         & GPU                   & 6               
 从表\ref{table:t1}可以看出，无论是诸如Xeon Phi和Matrix-2000这样的协处理器，还是Tesla V100s这样的GPU，其每瓦功能所能产生的双精度浮点性能都要比通用CPU高得多。
 
 \subsection{异构在软件层面的挑战}
-虽然异构并行运算大大提升了超级计算机的性能和能效比，但同时也不可避免地增加了软件设计方面的难度。以CPU+GPU异构的超算为例，CPU所擅长运行的是串行的、对执行顺序有依赖的程序，而GPU的优势则在于执行控制简单、高度并行的任务，这就要求程序设计从传统的编程思维中跳出来。\cite{supercom_energy_prog}
+虽然异构并行运算大大提升了超级计算机的性能和能效比，但同时也不可避免地增加了软件设计方面的难度。以CPU+GPU异构的超算为例，CPU所擅长运行的是串行的、对执行顺序有依赖的程序，而GPU的优势则在于执行控制简单、高度并行的任务，这就要求程序设计者从传统的、面向过程的编程思维中跳出来。\cite{supercom_energy_prog}
 
-\subsection{并行排序算法——双调排序}
+\subsection{并行算法——双调排序}
 以排序算法为例，传统的排序算法诸如冒泡排序、快速排序为了使得数据有序，需要运行大量的比较运算，并根据比较运算的结果决定接下来的操作，这样便在程序中产生了大量的分支和依赖，使得排序算法很难在并行机器，尤其是GPU这样众核架构的机器上达到高效率。当然，也存在着许多并行的排序算法，双调排序（Bitonic Sort）便是其中之一。
 
-双调排序的核心是双调序列，如果序列$a_{1},a_{2},...,a_{n}$是双调序列，那么（1）序列中存在$a_{i}$，使得$a_{1}\ge …\ge a_{i}\le …\le a_{n}$；或者（2）序列循环位移后能够满足条件（1）。
+双调排序的核心是双调序列，如果序列$a_{1},a_{2},...,a_{n}$是双调序列，那么
+\begin{enumerate}
+  \item 序列中存在$a_{i}$，使得$a_{1}\ge …\ge a_{i}\le …\le a_{n}$；或者
+  \item 序列循环位移后能够满足条件1。
+\end{enumerate}
 
-如果对长度为$2n$的双调序列X进行如下操作：（1）将$X$分割成等长的$MIN和MAX$；（2）对所有$MIN[i]$和$MAX[i] (0\le i\le n-1)$进行比较，如果$MIN[i]\ge MAX[i]$，则交换两元素位置。操作后得到的序列$MIN$和$MAX$仍然是双调序列。这是双调序列的一个重要特性，被称为Batcher定理。如果对一个大的双调序列递归地进行这样的操作，直到$n=1$，那么最终会得到一个有序序列。像这样将双调序列转换成有序序列的过程被称为双调排序（Bitonic Sort）
+
+而如果对长度为$2n$的双调序列X进行如下操作：
+\begin{enumerate}
+  \item 将$X$分割成等长的$MIN和MAX$；
+  \item 对所有$MIN[i]$和$MAX[i] (0\le i\le n-1)$进行比较，如果$MIN[i]\ge MAX[i]$，则交换两元素位置。
+\end{enumerate}
+
+
+这样操作后得到的序列$MIN$和$MAX$仍然是双调序列。这是双调序列的一个重要特性，被称为Batcher定理。如果对一个大的双调序列递归地进行这样的操作，直到$n=1$，那么最终会得到一个有序序列。像这样将双调序列转换成有序序列的过程被称为双调排序（Bitonic Sort）
 
 而将双调排序这个过程的思路反过来，从单个元素开始，按照递增和递减顺序合并相邻的序列，就可以将无序的序列转换为双调序列，这个过程被称为双调合并（Bitonic Merge）。\cite{bitonic_jianshu}
 
@@ -242,7 +256,7 @@ Tesla V100s &                         & GPU                   & 6               
     \label{fig:bitonic}
 \end{figure}
 
-如图所示，双调排序是一个高度并行的算法，如果串行运行，其时间复杂度为$\mathcal{O}(n\log_{2}{n})$，而当有$\frac{n}{2}$个可用线程时，则其时间复杂度为$\mathcal{O}(\log_{2}{n})$。\cite{bitonic_wiki}
+如图\ref{fig:bitonic}所示，双调排序是一个高度并行的算法，如果串行运行，其时间复杂度为$\mathcal{O}(n\log_{2}{n})$，而当有$\frac{n}{2}$个可用线程时，则其时间复杂度为$\mathcal{O}(\log_{2}{n})$。\cite{bitonic_wiki}
 
 
 % \begin{breakablealgorithm} 
@@ -298,7 +312,7 @@ Tesla V100s &                         & GPU                   & 6               
 ~
 
 
-值得留意的是，最近几年，TOP500登顶的两台计算机——神威太湖之光和富岳又回到了单芯片的路线，也就是说这些超算的节点中不再是CPU+协处理器或CPU+GPU这样有多种处理器的配置了。但是这些超算仍然是异构的——神威太湖之光所使用的神威26010处理器在片上集成了融合异构众核架构、单芯片具有4个运算控制核心和256个运算核心；而富岳所使用的A64FX也是48个计算核心、4个辅助核心的异构结构。总而言之，单芯片超算是对异构并行计算架构的一种肯定与发展。\cite{sw26010}\cite{a64fx}
+值得留意的是，最近几年，TOP500登顶的两台计算机——神威太湖之光和富岳又回到了单芯片的路线，也就是说这些超算的节点中，已经不再是CPU+协处理器或CPU+GPU这样有多种处理器的配置了。但是这些超算仍然是异构的——神威太湖之光所使用的神威26010处理器在片上集成了融合异构众核架构、单芯片具有4个运算控制核心和256个运算核心；而富岳所使用的A64FX也是48个计算核心、4个辅助核心的异构结构。总而言之，单芯片超算是对异构并行计算架构的一种肯定与发展。\cite{sw26010}\cite{a64fx}
 
 % 参考文献\cite{adams1995hitchhiker}\cite{shin2016deep}
     
@@ -350,20 +364,39 @@ Tesla V100s &                         & GPU                   & 6               
 \label{fig:arm_heter_cores}
 \end{figure}
 
-DynamIQ相较于big.LITTLE，最大的优点就是新增了可以更自由配置的大小核心数量的特性。在big.LITTLE中，相同的核心被打包在同一个集群（Cluster）里，一种典型应用是，四个大核（Cortex-A15）和四个小核(Cortex-A7)被分别打包为两个集群（Cluster），而两个集群之间则通过一致性互联总线（Coherent Interconnect）链接。而到了DynamIQ中，单个集群中核心的数量变为了8个，且不同的核心可以被打包在一个集群里。这样一来，ARM的客户便可以根据自己的需求自行配置大小核的比例 \cite{arm_dynamiq}
+DynamIQ相较于big.LITTLE，最大的优点就是新增了可以更自由配置的大小核心数量的特性。在big.LITTLE中，相同的核心被打包在同一个集群（Cluster）里，一种典型应用是，四个大核（Cortex-A15）和四个小核(Cortex-A7)被分别打包为两个集群（Cluster），而两个集群之间则通过一致性互联总线（Coherent Interconnect）链接。而到了DynamIQ中，单个集群中核心的数量变为了8个，且不同的核心可以被打包在一个集群里。这样一来，购买ARM IP的客户便可以根据自己的需求自行配置大小核的比例 \cite{arm_dynamiq}
 
 大小核的架构也对软件的设计提出了更高的要求。操作系统需要了解当前的电量状态，每个线程的性能需求等信息，并根据这些信息将线程转移到适合它们的核心上去，只有合理的调度算法，才能发挥大小核架构在效率方面的潜能。
 
 \subsection{X86}
 
-随着近年来笔记本电脑市场的扩张，在PC市场具有支配性地位的X86处理器设计公司们也愈来愈需要关注其产品能耗比这项指标了。英特尔公司在其最新发布的Alder Lake架构中，也使用了异构多核的技术。Alder Lake具有两种核心——被称为Golden Cove的性能核心，以及被称为Gracemont的效率核心。
+随着近年来笔记本电脑市场的扩张，在PC市场具有支配性地位的X86处理器设计公司们也愈来愈需要关注其产品能耗比这项指标了。英特尔公司在其最新发布的Alder Lake架构中，也使用了异构多核的技术。Alder Lake具有两种核心——被称为Golden Cove的性能核心，以及被称为Gracemont的效率核心。英特尔简化了效率核心的设计————四个效率核心的面积才相当于一个性能核心的面积，其具有“深前端”（64KB的大容量指令缓存、更准确的分支预测）、“广后端”（256个乱序执行窗口、17个执行端口）的设计特点，再配合最新的Intel 7制造工艺，效率核心获得了极好的能效比，面积较小的核心也降低了总线的长度，带来了更高的访存性能。而性能核心除了具有更大的256KB指令缓存和更复杂的乱序执行模块之外，还为了人工智能相关计算新增了矩阵乘法引擎。\cite{intel_archi_day}\cite{intel_alder_lake}
 
-英特尔Alder Lake的亮点在于其调度技术——Thread Director。当一个任务需要较少的性能时，会被优先分配到效率核心上，反之，则会被分配到性能核心上。而当所有的性能核心都被占用时，出现了一个需要更高性能的任务，比如说需要性能核心向量处理性能的AI任务，Thread Director便会向操作系统建议，将一个在性能核心上运行的任务转移到效率核心上。此外，如果性能核心上出现了等待状态的线程，它也会被移动到效率核心上运行。\cite{intel_alder_lake}
+\begin{figure}[htbp]
+\centering
+\subfigure[效率核心Gracemont]{
+\begin{minipage}[t]{0.48\linewidth}
+\centering
+\includegraphics[width=2.8in]{fig/alderlake_e_core.png}
+\end{minipage}%
+}%
+\subfigure[性能核心Golden Cove]{
+\begin{minipage}[t]{0.48\linewidth}
+\centering
+\includegraphics[width=2.8in]{fig/alderlake_p_core.png}
+\end{minipage}%
+}
+\centering
+\caption{Alder Lake架构中的两种核心\cite{intel_archi_day}}
+\label{fig:intel_alderlake}
+\end{figure}
+
+英特尔Alder Lake也有配套的调度技术——Thread Director。当一个任务需要较少的性能时，Thread Director会将其优先分配到效率核心上，反之，则会被分配到性能核心上。而当所有的性能核心都被占用时，出现了一个需要更高性能的任务，比如说需要性能核心矩阵处理性能的AI任务，Thread Director便会向操作系统建议，将一个在性能核心上运行的任务转移到效率核心上。此外，如果性能核心上出现了等待状态的线程，它也会被移动到效率核心上运行。Thread Director这项技术可以使得处理器在各种不同的使用场景下做到性能与功耗的平衡。\cite{intel_alder_lake}
 
 
 %----------------------------------------------------------------
 \section{总结}
-异构计算机在提升超级计算机性能、帮助移动设备获得更长续航时间这两件事上已经表现出了其巨大的潜力。我们应该相信，随着相关软硬件技术的发展，异构计算机将会变得更快、更强、更环保。
+异构计算机在提升超级计算机性能、帮助移动设备获得更好的能效比这两件事上已经表现出了其巨大的潜力。我们应该相信，随着相关软硬件技术的发展，异构计算机将会变得更快、更强、更环保。
 %----------------------------------------------------------------
 \newpage
 \bibliographystyle{plain}
