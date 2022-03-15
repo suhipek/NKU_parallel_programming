@@ -6,7 +6,7 @@
 
 #define USE_FIXED_N
 //#define N 1024
-#define REPT 100
+#define REPT 200
 
 using namespace std;
 

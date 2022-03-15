@@ -7,7 +7,7 @@
 #include "unroll_sum.h"
 
 //#define USE_FIXED_N
-#define N 65536
+//#define N 65536
 // N MUST BE A POWER OF 2
 #define REPT 1536
 
@@ -44,7 +44,9 @@ int main()
     data.close();
 
     cout << "N,common_algo,recursive_algo,unroll_algo_2,unroll_algo_8,unroll_algo_32,unroll_algo_128,unroll_algo_512,unroll_algo_2048" << endl;
-    for(int i = 32; i<N; i*=2)
+    
+    #ifndef USE_FIXED_N
+    for(int i = 32; i<=N; i*=2)
     {
         cout << i << ',';
         test(common_algo, "common_algo", arr, i);
@@ -57,22 +59,24 @@ int main()
         if(i>=2048)test(unroll_algo_2048, "unroll_algo_2048", arr, i);
         cout << endl;
     }
+    #else
     cout << N << ',';
     test(common_algo, "common_algo", arr, N);
     test(recursive_algo, "recursive_algo", arr, N);
     test(unroll_algo_2, "unroll_algo_2", arr, N);
-    // test(unroll_algo_4, "unroll_algo_4", arr, N);
+    test(unroll_algo_4, "unroll_algo_4", arr, N);
     test(unroll_algo_8, "unroll_algo_8", arr, N);
-    // test(unroll_algo_16, "unroll_algo_16", arr, N);
+    test(unroll_algo_16, "unroll_algo_16", arr, N);
     test(unroll_algo_32, "unroll_algo_32", arr, N);
-    // test(unroll_algo_64, "unroll_algo_64", arr, N);
+    test(unroll_algo_64, "unroll_algo_64", arr, N);
     test(unroll_algo_128, "unroll_algo_128", arr, N);
-    // test(unroll_algo_256, "unroll_algo_256", arr, N);
+    test(unroll_algo_256, "unroll_algo_256", arr, N);
     test(unroll_algo_512, "unroll_algo_512", arr, N);
-    // test(unroll_algo_1024, "unroll_algo_1024", arr, N);
+    test(unroll_algo_1024, "unroll_algo_1024", arr, N);
     test(unroll_algo_2048, "unroll_algo_2048", arr, N);
-    // test(unroll_algo_4096, "unroll_algo_4096", arr, N);
-    // test(unroll_algo_8192, "unroll_algo_8192", arr, N);
+    test(unroll_algo_4096, "unroll_algo_4096", arr, N);
+    test(unroll_algo_8192, "unroll_algo_8192", arr, N);
+    #endif
     
 
     // for (int i = 256; i < N; i *= 2)
