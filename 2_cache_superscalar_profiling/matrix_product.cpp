@@ -5,10 +5,13 @@
 #include <sys/time.h>
 
 #define USE_FIXED_N
-#define N 1024
+//#define N 1024
 #define REPT 100
 
 using namespace std;
+
+int mat[N][N];
+int vec[N];
 
 int *common_algo(int mat[N][N], int vec[N], int n)
 {
@@ -34,48 +37,38 @@ int *optimized_algo(int mat[N][N], int vec[N], int n)
     return sum;
 }
 
+void test(int *(*func)(int mat[N][N], int vec[N], int n),
+          const char *msg, int mat[N][N], int vec[N], int n)
+{
+    timespec start, end;
+    double time_used = 0;
+    int *ret = func(mat, vec, n);
+    // cout << "result[0]: " << *ret << "    ";
+    delete[] ret;
+    clock_gettime(CLOCK_REALTIME, &start);
+    for (int i = 0; i < REPT; i++)
+    {
+        int *ret = func(mat, vec, N);
+        delete[] ret;
+    }
+    clock_gettime(CLOCK_REALTIME, &end);
+    time_used += end.tv_sec - start.tv_sec;
+    time_used += double(end.tv_nsec - start.tv_nsec) / 1000000000;
+    // cout << msg << ": " << time_used << endl;
+    cout << time_used << ',';
+}
+
 int main()
 {
     ifstream data("mar_vec.dat", ios::in | ios::binary);
-    int mat[N][N];
-    int vec[N];
     data.read((char *)mat, N * N * sizeof(int));
     data.read((char *)vec, N * sizeof(int));
     data.close();
 
-    timespec start, end;
-    double time_used = 0;
-    clock_gettime(CLOCK_REALTIME, &start);
-    for (int i = 0; i < REPT; i++)
-    {
-        int *ret_common = common_algo(mat, vec, N);
-        delete[] ret_common;
-    }
-    clock_gettime(CLOCK_REALTIME, &end);
-    time_used += end.tv_sec - start.tv_sec;
-    time_used += double(end.tv_nsec - start.tv_nsec) / 1000000000;
-    cout << "common_algo: " << time_used << endl;
+    cout << N << ',';
+    test(common_algo, "common_algo", mat, vec, N);
+    test(optimized_algo, "optimized_algo", mat, vec, N);
+    cout << endl;
 
-    time_used = 0;
-    clock_gettime(CLOCK_REALTIME, &start);
-    for (int i = 0; i < REPT; i++)
-    {
-        int *ret_optimized = optimized_algo(mat, vec, N);
-        delete[] ret_optimized;
-    }
-    clock_gettime(CLOCK_REALTIME, &end);
-    time_used += end.tv_sec - start.tv_sec;
-    time_used += double(end.tv_nsec - start.tv_nsec) / 1000000000;
-    cout << "optimized_algo: " << time_used << endl;
-
-    // for(int i=0;i<N;i++)
-    //     if(ret_common[i] != ret_optimized[i])
-    //     {
-    //         cout << "results not matched!" << endl;
-    //         break;
-    //     }
-
-    // delete[] ret_common;
-    // delete[] ret_optimized;
     return 0;
 }
