@@ -278,7 +278,7 @@ I d & A^{-1} B \\
 
 \begin{table}[!htbp]
     \centering
-    \includegraphics[width=6in]{fig/cuda.png}
+    \includegraphics[width=5.4in]{fig/cuda.png}
     \caption{Jean Charles所提出的并行加速算法与其他线性代数库在标准测试中所使用的时间\cite{faugere2010parallel}}
     \label{tab:cudabenchmark}
 \end{table}
@@ -289,11 +289,25 @@ I d & A^{-1} B \\
 
 
 
-\section{研究方案}[!htbp]
-结合课程内容和前人研究，列出研究的任务清单如下：
+\section{研究方案}
+
+\subsection{研究问题及思路}
+
+Gröbner基计算中的高斯消去所处理的矩阵大多为稀疏矩阵，按照位向量存储可能会导致一定的空间浪费。我们可以采用三元组、倒排链表的方式进行压缩存储，但是这样也会增加算法的复杂性和并行化的难度。这个问题是一个需要权衡利弊的值得探讨的问题。
+
+此外，对于多项式生成的对称矩阵，其也具有在高斯消去过程中保持对称的特性，因此我们也可以在数据结构上进行一定的优化。\cite{lin_liu_song_2011}
+
+高斯消去的并行化还包含了一个重要内容——pivoting策略的选取，如表\ref{tab:f4benchmark}所示，不同的pivoting策略对于不同的输入数据规模所获得的加速比肯定都是不一样的，而这些pivoting策略在arm和X86平台上可能也会出现性能的差异，这是一个值得研究的问题。不过实现五个pivoting策略确实有一定的难度，如果时间不允许，选取几个有代表性的策略进行测试可能是比较好的解决方法。
+
+此外，当我们遇到规模较大，无法存入全部内存的数据，我们还需要考虑算法中外存访问的相关内容。除了对矩阵进行分批读取外，计算和访存异步模式也是可以考虑的方法之一。
+
+由于对GPU编程还不是很熟悉，我暂时还没有决定是通过oneAPI和CUDA来进行GPU并行加速的实现，但是前人工作中可以找到相关的实现思路。\cite{hojnacki2021parallel}
+
+\subsection{研究计划}
+结合上文中提出的研究问题及思路、课程内容和前人研究，列出研究的任务清单如下：
 % Please add the following required packages to your document preamble:
 % \usepackage{booktabs}
-\begin{table}[]
+\begin{table}[!htbp]
 \centering
 \begin{tabular}{@{}ll@{}}
 \toprule
@@ -302,14 +316,17 @@ I d & A^{-1} B \\
 第8周  & 完成Gröbner基计算中的高斯消去的串行算法和ARM平台SIMD加速 \\
 第9周  & 进行两种高斯消去算法SIMD加速在X86和ARM两种不同平台上的比较  \\
 第10周 & 通过Pthread和OpenMP实现多核加速的两种高斯消去算法     \\
+第10周 & 对Gröbner基计算中的高斯消去算法的数据结构进行研究     \\
 第12周 & 通过MPI实现集群加速的两种高斯消去算法                \\
+第12周 & 验证高斯消去不同Pivoting策略在不同平台上对性能的影响                \\
+第13周 & 尝试对高斯消去的外存访存进行优化                \\
 第14周 & 通过oneAPI或CUDA编程实现GPU加速的两种高斯消去算法     \\
 第15周 & 进一步优化、整理成果、探索加速算法的具体应用场景                          \\ \bottomrule
 \end{tabular}
 \end{table}
 
-\newpage
-由于这学期课业比较繁重，且需要在两校区之间往返，再加上之前对并行程序设计没有基础，因此所实现的任务可能在效果上有一定折扣。但相信只要完成了这些任务，所学到的知识，积累的经验都会是非常丰富的。
+\subsection{总结}
+由于这学期课业比较繁重，且需要在两校区之间往返，再加上之前对并行程序设计没有了解，因此任务的完成度可能会有一定折扣。但相信只要尽力开展了研究，所学到的知识，积累的经验都会是非常丰富的。
 
 
 
