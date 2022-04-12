@@ -15,8 +15,10 @@
 #define USE_SSE4
 #endif
 
-#define REPT 1
+#ifndef N
 #define N 1024
+#endif
+#define REPT 1
 #define ele_t float
 //#define DEBUG
 
@@ -107,6 +109,7 @@ void LU_simd(ele_t mat[N][N], int n)
 #endif
 }
 
+#ifdef __amd64__
 void LU_simd_fma(ele_t mat[N][N], int n)
 {
     // ele_t new_mat[N][N];
@@ -220,7 +223,9 @@ void LU_avx_aligned(ele_t mat[N][N], int n)
     cout << endl;
 #endif
 }
+#endif
 
+#ifdef __AVX512F__
 void LU_avx512(ele_t mat[N][N], int n)
 {
     // ele_t new_mat[N][N];
@@ -296,6 +301,7 @@ void LU_avx512_aligned(ele_t mat[N][N], int n)
     cout << endl;
 #endif
 }
+#endif
 
 int main()
 {
@@ -303,6 +309,7 @@ int main()
     ifstream data("gauss.dat", ios::in | ios::binary);
     data.read((char *)mat, N * N * sizeof(ele_t));
     data.close();
+    cout << N << ',';
 
 #ifdef NO_ALIGN_INFO
     cout << "new_mat addr:" << &new_mat << "    ";
