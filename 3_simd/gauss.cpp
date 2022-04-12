@@ -109,8 +109,7 @@ void LU_simd(ele_t mat[N][N], int n)
 #endif
 }
 
-#ifdef __amd64__
-void LU_simd_fma(ele_t mat[N][N], int n)
+void LU_simd_Aligned(ele_t mat[N][N], int n)
 {
     // ele_t new_mat[N][N];
     for (int i = 0; i < n; i++)
@@ -128,7 +127,46 @@ void LU_simd_fma(ele_t mat[N][N], int n)
             float32x4_t mat_i;
             float32x4_t res;
             // cout << new_mat[j][i] << '/' << new_mat[i][i] << '=' << div << endl;
-            for (int k = i; k < n; k += 4)
+            for (int k = i / 4 * 4; k < n; k += 4)
+            {
+                mat_j = vld1q_f32(new_mat[j] + k);
+                mat_i = vld1q_f32(new_mat[i] + k);
+                res = vmlsq_f32(mat_j, div4, mat_i);
+                vst1q_f32(new_mat[j] + k, res);
+            }
+        }
+
+#ifdef DEBUG
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+            cout << new_mat[i][j] << ' ';
+        cout << endl;
+    }
+    cout << endl;
+#endif
+}
+
+#ifdef __amd64__
+void LU_sse_fma(ele_t mat[N][N], int n)
+{
+    // ele_t new_mat[N][N];
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < n; j++)
+            new_mat[i][j] = mat[i][j];
+
+    for (int i = 0; i < n; i++)
+        for (int j = i + 1; j < n; j++)
+        {
+            if (new_mat[i][i] == 0)
+                continue;
+            ele_t div = new_mat[j][i] / new_mat[i][i];
+            float32x4_t div4 = vmovq_n_f32(div);
+            float32x4_t mat_j;
+            float32x4_t mat_i;
+            float32x4_t res;
+            // cout << new_mat[j][i] << '/' << new_mat[i][i] << '=' << div << endl;
+            for (int k = i / 4 * 4; k < n; k += 4)
             {
                 mat_j = vld1q_f32(new_mat[j] + k);
                 mat_i = vld1q_f32(new_mat[i] + k);
@@ -320,8 +358,9 @@ int main()
 #ifndef DEBUG
     test(LU, "commone algo: ", mat, N);
     test(LU_simd, "NEON/SSE: ", mat, N);
+    test(LU_simd_Aligned, "NEON/SSE Aligned: ", mat, N);
 #ifdef __amd64__
-    test(LU_simd_fma, "SSE FMA: ", mat, N);
+    test(LU_sse_fma, "SSE FMA: ", mat, N);
     test(LU_avx, "AVX: ", mat, N);
     test(LU_avx_aligned, "AVX Aligned: ", mat, N);
 #endif
