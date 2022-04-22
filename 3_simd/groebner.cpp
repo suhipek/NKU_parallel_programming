@@ -61,8 +61,13 @@ using namespace std;
 mat_t ele[COL][COL / mat_L + 1] = {0};
 mat_t row[ROW][COL / mat_L + 1] = {0};
 
+#ifndef ALIGN
 mat_t ele_tmp[COL][COL / mat_L + 1] __attribute__((aligned(64))) = {0};
 mat_t row_tmp[ROW][COL / mat_L + 1] __attribute__((aligned(64))) = {0};
+#else
+mat_t ele_tmp[COL][(COL / mat_L + 1) / 16 * 16 + 16] __attribute__((aligned(64))) = {0};
+mat_t row_tmp[ROW][(COL / mat_L + 1) / 16 * 16 + 16] __attribute__((aligned(64))) = {0};
+#endif
 
 void test(void (*func)(mat_t[COL][COL / mat_L + 1], mat_t[ROW][COL / mat_L + 1]), const char *msg)
 {
@@ -176,9 +181,15 @@ void groebner_avx(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 
                 {
                     for (int p = 0; p < COL / 256; p++)
                     {
+                        #ifdef ALIGN
+                        row_i = _mm256_load_si256((__m256i *)(row_tmp[i] + p * 8));
+                        ele_j = _mm256_load_si256((__m256i *)(ele_tmp[j] + p * 8));
+                        _mm256_store_si256((__m256i *)(row_tmp[i] + p * 8), _mm256_xor_si256(row_i, ele_j));
+                        #else
                         row_i = _mm256_loadu_si256((__m256i *)(row_tmp[i] + p * 8));
                         ele_j = _mm256_loadu_si256((__m256i *)(ele_tmp[j] + p * 8));
                         _mm256_storeu_si256((__m256i *)(row_tmp[i] + p * 8), _mm256_xor_si256(row_i, ele_j));
+                        #endif
                     }
                     for (int k = COL / 256 * 8; k <= COL / mat_L; k++)
                         row_tmp[i][k] ^= ele_tmp[j][k];
