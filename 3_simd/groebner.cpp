@@ -62,8 +62,8 @@ mat_t ele[COL][COL / mat_L + 1] = {0};
 mat_t row[ROW][COL / mat_L + 1] = {0};
 
 #ifndef ALIGN
-mat_t ele_tmp[COL][COL / mat_L + 1] __attribute__((aligned(64))) = {0};
-mat_t row_tmp[ROW][COL / mat_L + 1] __attribute__((aligned(64))) = {0};
+mat_t ele_tmp[COL][COL / mat_L + 1] = {0};
+mat_t row_tmp[ROW][COL / mat_L + 1] = {0};
 #else
 mat_t ele_tmp[COL][(COL / mat_L + 1) / 16 * 16 + 16] __attribute__((aligned(64))) = {0};
 mat_t row_tmp[ROW][(COL / mat_L + 1) / 16 * 16 + 16] __attribute__((aligned(64))) = {0};
@@ -215,8 +215,61 @@ void groebner_avx(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 
 #endif
 }
 
+#ifdef __AVX512F__
+void groebner_avx512(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 1])
+{
+    // ele=消元子，row=被消元行
+    memcpy(ele_tmp, ele, sizeof(mat_t) * COL * (COL / mat_L + 1));
+    memcpy(row_tmp, row, sizeof(mat_t) * ROW * (COL / mat_L + 1));
+    __m512i row_i, ele_j;
+    for (int i = 0; i < ROW; i++)
+    {
+        for (int j = COL; j >= 0; j--)
+        {
+            if (row_tmp[i][j / mat_L] & ((mat_t)1 << (j % mat_L)))
+            {
+                if (ele_tmp[j][j / mat_L] & ((mat_t)1 << (j % mat_L)))
+                {
+                    for (int p = 0; p < COL / 512; p++)
+                    {
+                        #ifdef ALIGN
+                        row_i = _mm512_load_si512((__m512i *)(row_tmp[i] + p * 16));
+                        ele_j = _mm512_load_si512((__m512i *)(ele_tmp[j] + p * 16));
+                        _mm512_store_si512((__m512i *)(row_tmp[i] + p * 16), _mm512_xor_si512(row_i, ele_j));
+                        #else
+                        row_i = _mm512_loadu_si512((__m512i *)(row_tmp[i] + p * 16));
+                        ele_j = _mm512_loadu_si512((__m512i *)(ele_tmp[j] + p * 16));
+                        _mm512_storeu_si512((__m512i *)(row_tmp[i] + p * 16), _mm512_xor_si512(row_i, ele_j));
+                        #endif
+                    }
+                    for (int k = COL / 512 * 16; k <= COL / mat_L; k++)
+                        row_tmp[i][k] ^= ele_tmp[j][k];
+                }
+                else
+                {
+                    memcpy(ele_tmp[j], row_tmp[i], (COL / mat_L + 1) * sizeof(mat_t));
+                    break;
+                }
+            }
+        }
+    }
+
+#ifdef DEBUG
+    for (int i = 0; i < ROW; i++)
+    {
+        cout << i << ": ";
+        for (int j = COL; j >= 0; j--)
+            if (row_tmp[i][j / mat_L] & ((mat_t)1 << (j % mat_L)))
+                cout << j << ' ';
+        cout << endl;
+    }
+#endif
+}
+#endif
+
 int main()
 {
+    //cout << (string)DATA + (string) "1.txt" << endl;
     ifstream data_ele((string)DATA + (string) "1.txt", ios::in);
     int temp, header;
     string line;
@@ -251,6 +304,9 @@ int main()
     test(groebner, "common");
     test(groebner_simd, "simd");
     test(groebner_avx, "avx");
+#ifdef __AVX512F__
+    test(groebner_avx512, "avx512");
+#endif
 #endif
 
     // groebner(ele, row);
