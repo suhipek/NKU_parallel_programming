@@ -141,7 +141,7 @@ void groebner_simd(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L +
                     {
                         row_i = vld1q_u32(row_tmp[i] + p * 4);
                         ele_j = vld1q_u32(ele_tmp[j] + p * 4);
-                        vst1q_u32(row_tmp[i] + p * 4, veorq_u32(row_i, ele_j))
+                        vst1q_u32(row_tmp[i] + p * 4, veorq_u32(row_i, ele_j));
                     }
                     for (int k = COL / 128 * 4; k <= COL / mat_L; k++)
                         row_tmp[i][k] ^= ele_tmp[j][k];
