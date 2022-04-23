@@ -167,6 +167,7 @@ void groebner_simd(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L +
 #endif
 }
 
+#ifdef __amd64__
 void groebner_avx(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 1])
 {
     // ele=消元子，row=被消元行
@@ -216,6 +217,7 @@ void groebner_avx(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 
     }
 #endif
 }
+#endif
 
 #ifdef __AVX512F__
 void groebner_avx512(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 1])
@@ -305,7 +307,9 @@ int main()
 #else
     test(groebner, "common");
     test(groebner_simd, "simd");
+#ifdef __amd64__
     test(groebner_avx, "avx");
+#endif
 #ifdef __AVX512F__
     test(groebner_avx512, "avx512");
 #endif
