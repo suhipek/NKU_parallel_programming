@@ -7,6 +7,8 @@
 #include <string>
 #include <string.h>
 
+#define PHILOSOPHY 能跑就行
+
 #ifdef __arm__
 #include <arm_neon.h>
 #endif
