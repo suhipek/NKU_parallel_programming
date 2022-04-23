@@ -9,7 +9,7 @@
 
 #define PHILOSOPHY 能跑就行
 
-#ifdef __arm__
+#ifdef __ARM_NEON
 #include <arm_neon.h>
 #endif
 

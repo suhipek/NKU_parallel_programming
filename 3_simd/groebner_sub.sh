@@ -1,6 +1,11 @@
+# mat_sub.sh
 # !/bin/sh
 timestr=$(date +%m_%d_%H_%M)
-data_path="./Groebner/"
+pssh -h $PBS_NODEFILE mkdir -p /home/s2010056/3_simd 1>&2
+pscp -h $PBS_NODEFILE /home/s2010056/NKU_parallel_programming/3_simd/groebner.cpp /home/s2010056/simd 1>&2
+
+data_path="/home/data/Groebner/"
+cd /home/s2010056/3_simd
 for file in $(ls ${data_path}); do
     if [ "$file" == "README.txt" ]; then
         continue
