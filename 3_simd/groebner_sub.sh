@@ -18,13 +18,13 @@ for file in $(ls ${data_path}); do
         echo "${data_path}${file}/"
         g++ -march=native -w -DDATA=\"${data_path}${file}/\" \
             -DCOL=${attr[1]} -DELE=${attr[2]} -DROW=${attr[3]} \
-            ./groebner.cpp -o ./groebner
-        ./groebner >>groebner_$timestr.csv
+            /home/s2010056/3_simd/groebner.cpp -o /home/s2010056/3_simd/groebner
+        /home/s2010056/3_simd/groebner >>/home/s2010056/3_simd/groebner_$timestr.csv
         echo "unaligned finished"
         g++ -march=native -w -DALIGN -DDATA=\"${data_path}${file}/\" \
             -DCOL=${attr[1]} -DELE=${attr[2]} -DROW=${attr[3]} \
-            ./groebner.cpp -o ./groebner
-        ./groebner >>groebner_$timestr.csv
-        echo '' >>groebner_$timestr.csv
+            /home/s2010056/3_simd/groebner.cpp -o /home/s2010056/3_simd/groebner
+        /home/s2010056/3_simd/groebner >>/home/s2010056/3_simd/groebner_$timestr.csv
+        echo '' >>/home/s2010056/3_simd/groebner_$timestr.csv
     fi
 done
