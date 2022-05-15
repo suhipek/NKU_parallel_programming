@@ -18,9 +18,9 @@
 #endif
 
 #define ZERO (float)1e-5
-#define NUM_THREADS 6
 #ifndef N
 #define N 2048
+#define NUM_THREADS 6
 #endif
 #define REPT 1
 #define ele_t float
@@ -360,9 +360,11 @@ int main()
 
 #ifndef DEBUG
     // test(LU, "commone algo: ", mat, N);
-    test(LU_simd, "NEON/SSE: ", mat, N);
+    if (NUM_THREADS == 1)
+        test(LU_simd, "NEON/SSE: ", mat, N);
     // test(LU_pthread, "pthread: ", mat, N);
-    test(LU_static_thread, "static thread: ", mat, N);
+    else
+        test(LU_static_thread, "static thread: ", mat, N);
 #else
     cout << endl;
     LU(mat, N);
