@@ -95,18 +95,18 @@ void groebner(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 1])
     memcpy(ele_tmp, ele, sizeof(mat_t) * COL * (COL / mat_L + 1));
     memcpy(row_tmp, row, sizeof(mat_t) * ROW * (COL / mat_L + 1));
     for (int i = 0; i < ROW; i++)
-    {
+    { // 遍历被消元行
         for (int j = COL; j >= 0; j--)
-        {
+        { // 遍历列
             if (row_tmp[i][j / mat_L] & ((mat_t)1 << (j % mat_L)))
-            {
+            { // 当前位置有元素，需要消元
                 if (ele_tmp[j][j / mat_L] & ((mat_t)1 << (j % mat_L)))
-                {
+                { //找到对应消元子
                     for (int p = COL / mat_L; p >= 0; p--)
                         row_tmp[i][p] ^= ele_tmp[j][p];
                 }
                 else
-                {
+                { // 找不到对应消元子，升格当前消元行
                     memcpy(ele_tmp[j], row_tmp[i], (COL / mat_L + 1) * sizeof(mat_t));
                     break;
                 }
@@ -136,40 +136,21 @@ void groebner_ele(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 
 
     for (int j = COL; j >= 0; j--)
     { // 遍历消元子
-        cout << "当前消元子: " << j << ' ';
         if (ele_tmp[j][j / mat_L] & ((mat_t)1 << (j % mat_L)))
         { // 如果存在对应消元子则进行消元
-            cout << "存在" << endl;
-            for (int m = COL; m >= 0; m--)
-                if (ele_tmp[j][m / mat_L] & ((mat_t)1 << (m % mat_L)))
-                    cout << m << ' ';
-            cout << endl;
             for (int i = 0; i < ROW; i++)
             { // 遍历被消元行
                 if (upgraded[i])
                     continue;
                 if (row_tmp[i][j / mat_L] & ((mat_t)1 << (j % mat_L)))
                 { // 如果当前行需要消元
-                    cout << "第" << i << "行消元前" << endl;
-                    for (int m = COL; m >= 0; m--)
-                        if (row_tmp[i][m / mat_L] & ((mat_t)1 << (m % mat_L)))
-                            cout << m << ' ';
-
                     for (int p = COL / mat_L; p >= 0; p--)
                         row_tmp[i][p] ^= ele_tmp[j][p];
-
-                    cout << "第" << i << "行消元后" << endl;
-                    for (int m = COL; m >= 0; m--)
-                        if (row_tmp[i][m / mat_L] & ((mat_t)1 << (m % mat_L)))
-                            cout << m << ' ';
                 }
-
-                cout << endl;
             }
         }
         else
         { // 不存在对应消元子，则找出第一个被消元行升格
-            cout << "不存在" << endl;
             for (int i = 0; i < ROW; i++)
             { // 遍历被消元行
                 if (upgraded[i])
@@ -178,17 +159,11 @@ void groebner_ele(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 
                 {
                     memcpy(ele_tmp[j], row_tmp[i], (COL / mat_L + 1) * sizeof(mat_t));
                     upgraded[i] = true;
-                    cout << "升格的第" << i << "行" << endl;
-                    for (int m = COL; m >= 0; m--)
-                        if (row_tmp[i][m / mat_L] & ((mat_t)1 << (m % mat_L)))
-                            cout << m << ' ';
-                    cout << endl;
                     j++;
                     break;
                 }
             }
         }
-        cout << endl;
     }
 
 #ifdef DEBUG
