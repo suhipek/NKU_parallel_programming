@@ -77,13 +77,8 @@ using namespace std;
 mat_t ele[COL][COL / mat_L + 1] = {0};
 mat_t row[ROW][COL / mat_L + 1] = {0};
 
-#ifndef ALIGN
 mat_t ele_tmp[COL][COL / mat_L + 1] __attribute__((aligned(64))) = {0};
 mat_t row_tmp[ROW][COL / mat_L + 1] __attribute__((aligned(64))) = {0};
-#else
-mat_t ele_tmp[COL][(COL / mat_L + 1) / 16 * 16 + 16] __attribute__((aligned(64))) = {0};
-mat_t row_tmp[ROW][(COL / mat_L + 1) / 16 * 16 + 16] __attribute__((aligned(64))) = {0};
-#endif
 
 void test(void (*func)(mat_t[COL][COL / mat_L + 1], mat_t[ROW][COL / mat_L + 1]), const char *msg)
 {
@@ -340,11 +335,12 @@ int main()
          << "end" << endl;
     groebner_pthread(ele, row);
 #else
-    test(groebner, "common");
-    test(groebner_new, "new serial");
-    test(groebner_pthread, "new pthread");
+    if (NUM_THREADS == 1)
+        test(groebner, "common");
+    else
+        test(groebner_pthread, "pthread");
 #ifdef __amd64__
-    // test(groebner_avx, "avx");
+        // test(groebner_avx, "avx");
 #endif
 #ifdef __AVX512F__
     test(groebner_avx512, "avx512");
