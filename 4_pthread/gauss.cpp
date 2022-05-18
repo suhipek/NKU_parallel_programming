@@ -19,8 +19,8 @@
 
 #define ZERO (float)1e-5
 #ifndef N
-#define N 2048
-#define NUM_THREADS 6
+#define N 4096
+#define NUM_THREADS 20
 #endif
 #define REPT 1
 #define ele_t float
@@ -35,7 +35,6 @@ void test(void (*func)(ele_t[N][N], int), const char *msg, ele_t mat[N][N], int 
 {
     timespec start, end;
     double time_used = 0;
-    // cout << "result: " << func(arr, len) << "    ";
     clock_gettime(CLOCK_REALTIME, &start);
     // for (int i = 0; i < REPT*(int)pow(2,(20-(int)(log2(len)))); i++)
     for (int i = 0; i < REPT; i++)
@@ -113,7 +112,7 @@ struct LU_data
     int th;
     pthread_mutex_t finished = PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_t startNext = PTHREAD_MUTEX_INITIALIZER;
-    float (*mat)[N][N];
+    ele_t (*mat)[N][N];
     int n;
     int i, begin, nLines; // 当前行、开始消去行、结束消去行
 };

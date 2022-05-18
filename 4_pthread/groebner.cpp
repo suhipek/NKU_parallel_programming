@@ -20,17 +20,21 @@
 #define USE_SSE4
 #endif
 
-#define DEBUG
+// #define DEBUG
 
-#ifndef DATA
-#define DATA "../Groebner/1_130_22_8/"
-#define COL 130
-#define ELE 22
-#define ROW 8
+#ifndef NUM_THREADS
+#define NUM_THREADS 16
 #endif
 
 // #ifndef DATA
-// #define DATA "./Groebner/2_254_106_53/"
+// #define DATA "../Groebner/1_130_22_8/"
+// #define COL 130
+// #define ELE 22
+// #define ROW 8
+// #endif
+
+// #ifndef DATA
+// #define DATA "../Groebner/2_254_106_53/"
 // #define COL 254
 // #define ELE 106
 // #define ROW 53
@@ -44,18 +48,25 @@
 // #endif
 
 // #ifndef DATA
-// #define DATA "./Groebner/4_1011_539_263/"
+// #define DATA "../Groebner/4_1011_539_263/"
 // #define COL 1011
 // #define ELE 539
 // #define ROW 263
 // #endif
 
 // #ifndef DATA
-// #define DATA "./Groebner/6_3799_2759_1953/"
+// #define DATA "../Groebner/6_3799_2759_1953/"
 // #define COL 3799
 // #define ELE 2759
 // #define ROW 1953
 // #endif
+
+#ifndef DATA
+#define DATA "../Groebner/7_8399_6375_4535/"
+#define COL 8399
+#define ELE 6375
+#define ROW 4535
+#endif
 
 #define mat_t unsigned int
 #define mat_L 32
@@ -67,8 +78,8 @@ mat_t ele[COL][COL / mat_L + 1] = {0};
 mat_t row[ROW][COL / mat_L + 1] = {0};
 
 #ifndef ALIGN
-mat_t ele_tmp[COL][COL / mat_L + 1] = {0};
-mat_t row_tmp[ROW][COL / mat_L + 1] = {0};
+mat_t ele_tmp[COL][COL / mat_L + 1] __attribute__((aligned(64))) = {0};
+mat_t row_tmp[ROW][COL / mat_L + 1] __attribute__((aligned(64))) = {0};
 #else
 mat_t ele_tmp[COL][(COL / mat_L + 1) / 16 * 16 + 16] __attribute__((aligned(64))) = {0};
 mat_t row_tmp[ROW][(COL / mat_L + 1) / 16 * 16 + 16] __attribute__((aligned(64))) = {0};
@@ -126,7 +137,7 @@ void groebner(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 1])
 #endif
 }
 
-void groebner_ele(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 1])
+void groebner_new(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 1])
 {
     // ele=消元子，row=被消元行
     memcpy(ele_tmp, ele, sizeof(mat_t) * COL * (COL / mat_L + 1));
@@ -148,6 +159,121 @@ void groebner_ele(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 
                         row_tmp[i][p] ^= ele_tmp[j][p];
                 }
             }
+        }
+        else
+        { // 不存在对应消元子，则找出第一个被消元行升格
+            for (int i = 0; i < ROW; i++)
+            { // 遍历被消元行
+                if (upgraded[i])
+                    continue;
+                if (row_tmp[i][j / mat_L] & ((mat_t)1 << (j % mat_L)))
+                {
+                    memcpy(ele_tmp[j], row_tmp[i], (COL / mat_L + 1) * sizeof(mat_t));
+                    upgraded[i] = true;
+                    j++;
+                    break;
+                }
+            }
+        }
+    }
+
+#ifdef DEBUG
+    for (int i = 0; i < ROW; i++)
+    {
+        cout << i << ": ";
+        for (int j = COL; j >= 0; j--)
+            if (row_tmp[i][j / mat_L] & ((mat_t)1 << (j % mat_L)))
+                cout << j << ' ';
+        cout << endl;
+    }
+#endif
+}
+
+struct groebnerData
+{
+    mat_t (*ele)[COL][COL / mat_L + 1];
+    mat_t (*row)[ROW][COL / mat_L + 1];
+    bool (*upgraded)[ROW];
+    int j, begin, nLines;
+    pthread_mutex_t finished = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_t startNext = PTHREAD_MUTEX_INITIALIZER;
+};
+
+void *subthread_groebner(void *_params)
+{
+    groebnerData *params = (groebnerData *)_params;
+    int j;
+    while (true)
+    {
+        pthread_mutex_lock(&(params->startNext));
+        j = params->j;
+        for (int i = params->begin; i < params->begin + params->nLines; i++)
+        { // 遍历被消元行
+            if ((*params->upgraded)[i])
+                continue;
+            if ((*params->row)[i][j / mat_L] & ((mat_t)1 << (j % mat_L)))
+            { // 如果当前行需要消元
+                for (int p = COL / mat_L; p >= 0; p--)
+                    (*params->row)[i][p] ^= (*params->ele)[j][p];
+            }
+        }
+        pthread_mutex_unlock(&(params->finished));
+    }
+}
+
+void groebner_pthread(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 1])
+{
+    // ele=消元子，row=被消元行
+    memcpy(ele_tmp, ele, sizeof(mat_t) * COL * (COL / mat_L + 1));
+    memcpy(row_tmp, row, sizeof(mat_t) * ROW * (COL / mat_L + 1));
+
+    bool upgraded[ROW] = {0};
+    pthread_t threads[NUM_THREADS];
+    groebnerData attr[NUM_THREADS];
+
+    for (int th = 0; th < NUM_THREADS; th++)
+    {
+        pthread_mutex_lock(&(attr[th].startNext));
+        pthread_mutex_lock(&(attr[th].finished));
+        int err = pthread_create(&threads[th], NULL, subthread_groebner, (void *)&attr[th]);
+        if (err)
+        {
+            cout << "failed to create thread[" << th << "]" << endl;
+            exit(-1);
+        }
+    }
+
+    for (int j = COL; j >= 0; j--)
+    { // 遍历消元子
+        if (ele_tmp[j][j / mat_L] & ((mat_t)1 << (j % mat_L)))
+        { // 如果存在对应消元子则进行消元
+
+            int nLines = ROW / NUM_THREADS;
+
+            for (int th = 0; th < NUM_THREADS; th++)
+            {
+                attr[th].ele = &ele_tmp;
+                attr[th].row = &row_tmp;
+                attr[th].upgraded = &upgraded;
+                attr[th].j = j;
+                attr[th].begin = th * nLines;
+                attr[th].nLines = nLines;
+                pthread_mutex_unlock(&(attr[th].startNext));
+            }
+
+            for (int i = ROW / NUM_THREADS * NUM_THREADS; i < ROW; i++)
+            { // 遍历被消元行
+                if (upgraded[i])
+                    continue;
+                if (row_tmp[i][j / mat_L] & ((mat_t)1 << (j % mat_L)))
+                { // 如果当前行需要消元
+                    for (int p = COL / mat_L; p >= 0; p--)
+                        row_tmp[i][p] ^= ele_tmp[j][p];
+                }
+            }
+
+            for (int th = 0; th < NUM_THREADS; th++)
+                pthread_mutex_lock(&(attr[th].finished));
         }
         else
         { // 不存在对应消元子，则找出第一个被消元行升格
@@ -209,12 +335,16 @@ int main()
     groebner(ele, row);
     cout << endl
          << "end" << endl;
-    groebner_ele(ele, row);
+    groebner_new(ele, row);
+    cout << endl
+         << "end" << endl;
+    groebner_pthread(ele, row);
 #else
     test(groebner, "common");
-    test(groebner_simd, "simd");
+    test(groebner_new, "new serial");
+    test(groebner_pthread, "new pthread");
 #ifdef __amd64__
-    test(groebner_avx, "avx");
+    // test(groebner_avx, "avx");
 #endif
 #ifdef __AVX512F__
     test(groebner_avx512, "avx512");
