@@ -12,8 +12,8 @@ for file in $(ls ${data_path}); do
     else
         attr=(${file//_/ })
         # echo ${arrIN[1]}
-        if [ "${attr[0]}" == "8" ]; then
-            break
+        if [ "${attr[0]}" -gt "8" ]; then
+            continue
         fi
         echo "${data_path}${file}/"
         g++ -march=native -w -DDATA=\"${data_path}${file}/\" \
