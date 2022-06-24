@@ -80,6 +80,10 @@
 #define mat_L 32
 #define REPT 1
 
+#ifndef SEPR
+#define SEPR endl
+#endif
+
 using namespace std;
 
 mat_t ele[COL][COL / mat_L + 1] = {0};
@@ -100,7 +104,7 @@ void test(void (*func)(mat_t[COL][COL / mat_L + 1], mat_t[ROW][COL / mat_L + 1])
     clock_gettime(CLOCK_REALTIME, &end);
     time_used += end.tv_sec - start.tv_sec;
     time_used += double(end.tv_nsec - start.tv_nsec) / 1000000000;
-    cout << time_used << ',';
+    cout << time_used << SEPR;
 }
 
 void groebner(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 1])
@@ -196,7 +200,7 @@ void groebner_omp(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 
 
     bool upgraded[ROW] = {0};
 
-#pragma omp parallel num_threads(8)
+#pragma omp parallel num_threads(NUM_THREADS)
     for (int j = COL; j >= 0; j--)
     { // 遍历消元子
 #pragma omp master
@@ -216,27 +220,16 @@ void groebner_omp(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 
             }
         }
 #pragma omp barrier
-#pragma omp for
+#pragma omp for 
         for (int i = 0; i < ROW; i++)
         { // 遍历被消元行
             if (upgraded[i])
                 continue;
             if (row_tmp[i][j / mat_L] & ((mat_t)1 << (j % mat_L)))
             { // 如果当前行需要消元
-#pragma omp simd
+#pragma omp simd simdlen(8)
                 for (int p = 0; p <= COL / mat_L; p++)
                     row_tmp[i][p] ^= ele_tmp[j][p];
-                // printf("线程%d: 存在消元子%d, 将被消元行%d消元\n", omp_get_thread_num(), j, i);
-
-                // __m256i row_i, ele_j;
-                // for (int p = 0; p < COL / 256; p++)
-                // {
-                //     row_i = _mm256_loadu_si256((__m256i *)(row_tmp[i] + p * 8));
-                //     ele_j = _mm256_loadu_si256((__m256i *)(ele_tmp[j] + p * 8));
-                //     _mm256_storeu_si256((__m256i *)(row_tmp[i] + p * 8), _mm256_xor_si256(row_i, ele_j));
-                // }
-                // for (int k = COL / 256 * 8; k <= COL / mat_L; k++)
-                //     row_tmp[i][k] ^= ele_tmp[j][k];
             }
         }
     }
