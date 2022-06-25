@@ -31,7 +31,7 @@
 // #define DEBUG
 
 #ifndef NUM_THREADS
-#define NUM_THREADS 16
+#define NUM_THREADS 18
 #endif
 
 // #ifndef DATA
@@ -69,11 +69,18 @@
 // #define ROW 1953
 // #endif
 
+// #ifndef DATA
+// #define DATA "../Groebner/7_8399_6375_4535/"
+// #define COL 8399
+// #define ELE 6375
+// #define ROW 4535
+// #endif
+
 #ifndef DATA
-#define DATA "../Groebner/7_8399_6375_4535/"
-#define COL 8399
-#define ELE 6375
-#define ROW 4535
+#define DATA "../Groebner/8_23075_18748_14325/"
+#define COL 23075
+#define ELE 18748
+#define ROW 14325
 #endif
 
 #define mat_t unsigned int
@@ -82,6 +89,11 @@
 
 #ifndef SEPR
 #define SEPR endl
+#endif
+
+#ifndef OPT_CLAUSE
+#define NUM_BLOCKS 4
+#define OPT_CLAUSE schedule(guided)
 #endif
 
 using namespace std;
@@ -102,8 +114,8 @@ void test(void (*func)(mat_t[COL][COL / mat_L + 1], mat_t[ROW][COL / mat_L + 1])
     for (int i = 0; i < REPT; i++)
         func(ele, row);
     clock_gettime(CLOCK_REALTIME, &end);
-    time_used += end.tv_sec - start.tv_sec;
-    time_used += double(end.tv_nsec - start.tv_nsec) / 1000000000;
+    time_used += (end.tv_sec - start.tv_sec) * 1000;
+    time_used += double(end.tv_nsec - start.tv_nsec) / 1000000;
     cout << time_used << SEPR;
 }
 
@@ -220,14 +232,14 @@ void groebner_omp(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 
             }
         }
 #pragma omp barrier
-#pragma omp for 
+#pragma omp for OPT_CLAUSE
         for (int i = 0; i < ROW; i++)
         { // 遍历被消元行
             if (upgraded[i])
                 continue;
             if (row_tmp[i][j / mat_L] & ((mat_t)1 << (j % mat_L)))
             { // 如果当前行需要消元
-#pragma omp simd simdlen(8)
+#pragma omp simd
                 for (int p = 0; p <= COL / mat_L; p++)
                     row_tmp[i][p] ^= ele_tmp[j][p];
             }
@@ -252,6 +264,7 @@ int main()
     ifstream data_ele((string)DATA + (string) "1.txt", ios::in);
     int temp, header;
     string line;
+
     for (int i = 0; i < ELE; i++)
     {
         getline(data_ele, line);
@@ -282,13 +295,10 @@ int main()
          << "end" << endl;
     groebner_omp(ele, row);
 #else
-    test(groebner, "common");
-    test(groebner_new, "common");
-    test(groebner_omp, "common");
-    // if (NUM_THREADS == 1)
-    //     test(groebner, "common");
-    // else
-    //     test(groebner_pthread, "pthread");
+    if (NUM_THREADS == 1)
+        test(groebner, "common");
+    else
+        test(groebner_omp, "common");
 #endif
     return 0;
 }
