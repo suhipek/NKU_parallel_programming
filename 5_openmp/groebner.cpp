@@ -98,11 +98,11 @@
 
 using namespace std;
 
-mat_t ele[COL][COL / mat_L + 1] = {0};
-mat_t row[ROW][COL / mat_L + 1] = {0};
+mat_t ele[COL][COL / mat_L + 1] __attribute__((aligned(64))) = {0};
+mat_t row[ROW][COL / mat_L + 1] __attribute__((aligned(64))) = {0};
 
-mat_t ele_tmp[COL][COL / mat_L + 1] __attribute__((aligned(64))) = {0};
-mat_t row_tmp[ROW][COL / mat_L + 1] __attribute__((aligned(64))) = {0};
+// mat_t ele_tmp[COL][COL / mat_L + 1] __attribute__((aligned(64))) = {0};
+// mat_t row_tmp[ROW][COL / mat_L + 1] __attribute__((aligned(64))) = {0};
 
 void test(void (*func)(mat_t[COL][COL / mat_L + 1], mat_t[ROW][COL / mat_L + 1]), const char *msg)
 {
@@ -119,11 +119,11 @@ void test(void (*func)(mat_t[COL][COL / mat_L + 1], mat_t[ROW][COL / mat_L + 1])
     cout << time_used << SEPR;
 }
 
-void groebner(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 1])
+void groebner(mat_t ele_tmp[COL][COL / mat_L + 1], mat_t row_tmp[ROW][COL / mat_L + 1])
 {
     // ele=消元子，row=被消元行
-    memcpy(ele_tmp, ele, sizeof(mat_t) * COL * (COL / mat_L + 1));
-    memcpy(row_tmp, row, sizeof(mat_t) * ROW * (COL / mat_L + 1));
+    // memcpy(ele_tmp, ele, sizeof(mat_t) * COL * (COL / mat_L + 1));
+    // memcpy(row_tmp, row, sizeof(mat_t) * ROW * (COL / mat_L + 1));
     for (int i = 0; i < ROW; i++)
     { // 遍历被消元行
         for (int j = COL; j >= 0; j--)
@@ -156,11 +156,11 @@ void groebner(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 1])
 #endif
 }
 
-void groebner_new(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 1])
+void groebner_new(mat_t ele_tmp[COL][COL / mat_L + 1], mat_t row_tmp[ROW][COL / mat_L + 1])
 {
     // ele=消元子，row=被消元行
-    memcpy(ele_tmp, ele, sizeof(mat_t) * COL * (COL / mat_L + 1));
-    memcpy(row_tmp, row, sizeof(mat_t) * ROW * (COL / mat_L + 1));
+    // memcpy(ele_tmp, ele, sizeof(mat_t) * COL * (COL / mat_L + 1));
+    // memcpy(row_tmp, row, sizeof(mat_t) * ROW * (COL / mat_L + 1));
 
     bool upgraded[ROW] = {0};
 
@@ -204,11 +204,11 @@ void groebner_new(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 
 #endif
 }
 
-void groebner_omp(mat_t ele[COL][COL / mat_L + 1], mat_t row[ROW][COL / mat_L + 1])
+void groebner_omp(mat_t ele_tmp[COL][COL / mat_L + 1], mat_t row_tmp[ROW][COL / mat_L + 1])
 {
     // ele=消元子，row=被消元行
-    memcpy(ele_tmp, ele, sizeof(mat_t) * COL * (COL / mat_L + 1));
-    memcpy(row_tmp, row, sizeof(mat_t) * ROW * (COL / mat_L + 1));
+    // memcpy(ele_tmp, ele, sizeof(mat_t) * COL * (COL / mat_L + 1));
+    // memcpy(row_tmp, row, sizeof(mat_t) * ROW * (COL / mat_L + 1));
 
     bool upgraded[ROW] = {0};
 
