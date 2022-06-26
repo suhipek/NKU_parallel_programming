@@ -28,7 +28,7 @@
 
 #endif
 
-// #define DEBUG
+#define DEBUG
 
 #ifndef NUM_THREADS
 #define NUM_THREADS 18
@@ -41,12 +41,12 @@
 // #define ROW 8
 // #endif
 
-// #ifndef DATA
-// #define DATA "../Groebner/2_254_106_53/"
-// #define COL 254
-// #define ELE 106
-// #define ROW 53
-// #endif
+#ifndef DATA
+#define DATA "../Groebner/2_254_106_53/"
+#define COL 254
+#define ELE 106
+#define ROW 53
+#endif
 
 // #ifndef DATA
 // #define DATA "./Groebner/3_562_170_53/"
@@ -76,12 +76,19 @@
 // #define ROW 4535
 // #endif
 
-#ifndef DATA
-#define DATA "../Groebner/8_23075_18748_14325/"
-#define COL 23075
-#define ELE 18748
-#define ROW 14325
-#endif
+// #ifndef DATA
+// #define DATA "../Groebner/8_23075_18748_14325/"
+// #define COL 23075
+// #define ELE 18748
+// #define ROW 14325
+// #endif
+
+// #ifndef DATA
+// #define DATA "../Groebner/9_37960_29304_14921/"
+// #define COL 37960
+// #define ELE 29304
+// #define ROW 14921
+// #endif
 
 #define mat_t unsigned int
 #define mat_L 32
@@ -126,7 +133,7 @@ void groebner(mat_t ele_tmp[COL][COL / mat_L + 1], mat_t row_tmp[ROW][COL / mat_
     // memcpy(row_tmp, row, sizeof(mat_t) * ROW * (COL / mat_L + 1));
     for (int i = 0; i < ROW; i++)
     { // 遍历被消元行
-        for (int j = COL; j >= 0; j--)
+        for (int j = COL - 1; j >= 0; j--)
         { // 遍历列
             if (row_tmp[i][j / mat_L] & ((mat_t)1 << (j % mat_L)))
             { // 当前位置有元素，需要消元
@@ -164,7 +171,7 @@ void groebner_new(mat_t ele_tmp[COL][COL / mat_L + 1], mat_t row_tmp[ROW][COL / 
 
     bool upgraded[ROW] = {0};
 
-    for (int j = COL; j >= 0; j--)
+    for (int j = COL - 1; j >= 0; j--)
     { // 遍历消元子
         if (!(ele_tmp[j][j / mat_L] & ((mat_t)1 << (j % mat_L))))
         { // 如果存在对应消元子则进行消元
@@ -213,7 +220,7 @@ void groebner_omp(mat_t ele_tmp[COL][COL / mat_L + 1], mat_t row_tmp[ROW][COL / 
     bool upgraded[ROW] = {0};
 
 #pragma omp parallel num_threads(NUM_THREADS)
-    for (int j = COL; j >= 0; j--)
+    for (int j = COL - 1; j >= 0; j--)
     { // 遍历消元子
 #pragma omp master
         if (!(ele_tmp[j][j / mat_L] & ((mat_t)1 << (j % mat_L))))
@@ -287,12 +294,12 @@ int main()
     data_row.close();
 
 #ifdef DEBUG
-    groebner(ele, row);
-    cout << endl
-         << "end" << endl;
-    groebner_new(ele, row);
-    cout << endl
-         << "end" << endl;
+    // groebner(ele, row);
+    // cout << endl
+    //      << "end" << endl;
+    // groebner_new(ele, row);
+    // cout << endl
+    //      << "end" << endl;
     groebner_omp(ele, row);
 #else
     if (NUM_THREADS == 1)
