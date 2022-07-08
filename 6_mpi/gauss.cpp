@@ -27,42 +27,42 @@ int world_size, world_rank;
 
 void run_master(ele_t *_mat)
 {
-    int NUM_THREADS = world_size - 1;
     ele_t(*mat)[N] = (ele_t(*)[N])_mat;
     cout << endl;
     for (int i = 0; i < N; i++)
     {
-        int n_lines = 0;
-        if (world_size != 1)
-        {
-            n_lines = (N - i - 1) / (world_size - 1);
-        }
+        int n_lines = (N - i - 1) / world_size + 1;
+        n_lines = n_lines == 1 ? 0 : n_lines;
         // MPI_Bcast(&i, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(mat[i], sizeof(ele_t) * N, MPI_BYTE, 0, MPI_COMM_WORLD);
-        for (int th = 1; th < world_size; th++)
+        if (n_lines)
         {
-            MPI_Send(mat[i + 1 + (th - 1) * n_lines], sizeof(ele_t) * N * n_lines, MPI_BYTE, th, 0, MPI_COMM_WORLD);
+            MPI_Bcast(mat[i], sizeof(ele_t) * N, MPI_BYTE, 0, MPI_COMM_WORLD);
+            for (int th = 1; th < world_size; th++)
+            {
+                MPI_Send(mat[i + 1 + (th - 1) * n_lines], sizeof(ele_t) * N * n_lines, MPI_BYTE, th, 0, MPI_COMM_WORLD);
+            }
         }
-        int offset = NUM_THREADS ? NUM_THREADS * ((N - i - 1) / NUM_THREADS) : 0;
-#pragma omp parallel for
-        for (int j = i + 1 + offset; j < N; j++)
+
+#pragma omp parallel for num_threads(4)
+        for (int j = i + 1 + (world_size - 1) * n_lines; j < N; j++)
         {
             if (abs(mat[i][i]) < ZERO)
                 continue;
             ele_t div = mat[j][i] / mat[i][i];
+#pragma omp simd
             for (int k = i; k < N; k++)
                 mat[j][k] -= mat[i][k] * div;
         }
-        for (int th = 1; th < world_size; th++)
+
+        if (n_lines)
         {
-            if (n_lines)
+            for (int th = 1; th < world_size; th++)
+            {
                 MPI_Recv(mat[i + 1 + (th - 1) * n_lines], sizeof(ele_t) * N * n_lines, MPI_BYTE, th, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            else
-                MPI_Recv(nullptr, sizeof(ele_t) * N * n_lines, MPI_BYTE, th, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            }
         }
     }
-    int i = -1;
-    MPI_Bcast(&i, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
 #ifdef DEBUG
     for (int i = 0; i < N; i++)
     {
@@ -82,17 +82,20 @@ void run_slave()
 
     for (int i = 0; i < N; i++)
     {
-        n_lines = (N - i - 1) / (world_size - 1);
+        n_lines = (N - i - 1) / world_size + 1;
+        if (n_lines == 1)
+            break;
         MPI_Bcast(lines_i, sizeof(ele_t) * N, MPI_BYTE, 0, MPI_COMM_WORLD);
         // printf("%d: pivot: %d, lines: %d\n", world_rank, i, n_lines);
         ele_t(*mat)[N] = (ele_t(*)[N])malloc(n_lines * N * sizeof(ele_t));
         MPI_Recv(mat, n_lines * N * sizeof(ele_t), MPI_BYTE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-#pragma omp parallel for
+#pragma omp parallel for num_threads(4)
         for (int j = 0; j < n_lines; j++)
         {
             if (abs(lines_i[i]) < ZERO) // 枢轴为0，不需要消元
                 continue;
             ele_t div = mat[j][i] / lines_i[i];
+#pragma omp simd
             for (int k = i; k < N; k++)
                 mat[j][k] -= lines_i[k] * div;
         }

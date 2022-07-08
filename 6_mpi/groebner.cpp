@@ -100,12 +100,14 @@ void run_master(mat_t (*ele)[COL / mat_L + 1], mat_t (*row)[COL / mat_L + 1])
             MPI_Send(row + i_offset, n_workload * (COL / mat_L + 1) * sizeof(mat_t), MPI_BYTE, th, 0, MPI_COMM_WORLD);
         }
 
+#pragma omp parallel for num_threads(4)
         for (int i = n_workload * (world_size - 1); i < ROW; i++)
         { // 遍历被消元行
             if (upgraded[i])
                 continue;
             if (row[i][j / mat_L] & ((mat_t)1 << (j % mat_L)))
             { // 如果当前行需要消元
+#pragma omp simd
                 for (int p = 0; p <= COL / mat_L; p++)
                     row[i][p] ^= ele[j][p];
             }
@@ -149,12 +151,14 @@ void run_slave()
         MPI_Bcast(upgraded, ROW * sizeof(bool), MPI_BYTE, 0, MPI_COMM_WORLD);
         MPI_Recv(row, n_workload * (COL / mat_L + 1) * sizeof(mat_t), MPI_BYTE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
+#pragma omp parallel for num_threads(4)
         for (int i = i_offset; i < i_offset + n_workload; i++)
         {
             if (upgraded[i])
                 continue;
             if (row[i - i_offset][j / mat_L] & ((mat_t)1 << (j % mat_L)))
             { // 如果当前行需要消元
+#pragma omp simd
                 for (int p = 0; p <= COL / mat_L; p++)
                     row[i - i_offset][p] ^= ele_j[p];
             }
