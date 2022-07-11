@@ -29,6 +29,13 @@ using namespace std;
 // #define ROW 53
 // #endif
 
+// #ifndef DATA
+// #define DATA "../Groebner/5_2362_1226_453/"
+// #define COL 2362
+// #define ELE 1226
+// #define ROW 453
+// #endif
+
 #ifndef DATA
 #define DATA "../Groebner/6_3799_2759_1953/"
 #define COL 3799
@@ -41,6 +48,7 @@ using namespace std;
 void groebner_sparse(array<vector<mat_t>, COL> ele, array<vector<mat_t>, ROW> row)
 {
     bool upgraded[ROW] = {0};
+    mat_t buffer[COL];
 
     for (mat_t j = COL - 1; j >= 0; j--)
     { // 遍历消元子
@@ -52,7 +60,7 @@ void groebner_sparse(array<vector<mat_t>, COL> ele, array<vector<mat_t>, ROW> ro
                     continue;
                 if (row[i][0] == j)
                 {
-                    ele[j]=row[i];
+                    ele[j] = row[i];
                     upgraded[i] = true;
                     break;
                 }
@@ -65,38 +73,36 @@ void groebner_sparse(array<vector<mat_t>, COL> ele, array<vector<mat_t>, ROW> ro
             if (row[i][0] == j)
             { // 如果当前行需要消元
                 mat_t pRow = 0, pEle = 0;
-                mat_t rowMax = row[i].size();
-                mat_t eleMax = ele[j].size();
+                int rowMax = row[i].size();
+                int eleMax = ele[j].size();
+                mat_t row_i_p, ele_j_p;
                 vector<mat_t> result;
+
+                mat_t last = 0;
+
                 while (pRow < rowMax && pEle < eleMax)
                 {
-                    if (row[i][pRow] == ele[j][pEle])
-                    {
-                        pRow++;
-                        pEle++;
-                    }
-                    else if (row[i][pRow] > ele[j][pEle])
-                    {
-                        result.push_back(row[i][pRow]);
-                        pRow++;
-                    }
-                    else
-                    {
-                        result.push_back(ele[j][pEle]);
-                        pEle++;
-                    }
+                    row_i_p = row[i][pRow];
+                    ele_j_p = ele[j][pEle];
+
+                    pRow += row_i_p >= ele_j_p ? 1 : 0;
+                    pEle += ele_j_p >= row_i_p ? 1 : 0;
+                    buffer[last] = max(row_i_p, ele_j_p);
+                    last += row_i_p == ele_j_p ? 0 : 1;
                 }
-                while (pRow < rowMax)
+
+                for (; pRow < rowMax; pRow++)
                 {
-                    result.push_back(row[i][pRow]);
-                    pRow++;
+                    buffer[last]=row[i][pRow];
+                    last++;
                 }
-                while (pEle < eleMax)
+                for (; pEle < eleMax; pEle++)
                 {
-                    result.push_back(ele[j][pEle]);
-                    pEle++;
+                    buffer[last]=ele[j][pEle];
+                    last++;
                 }
-                row[i] = result;
+                row[i].resize(last);
+                memcpy(&(row[i][0]), buffer, last*sizeof(mat_t));
             }
         }
     }
