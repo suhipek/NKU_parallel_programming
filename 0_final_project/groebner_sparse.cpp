@@ -13,7 +13,7 @@
 
 using namespace std;
 
-#define mat_t int16_t
+#define mat_t int
 
 // #ifndef DATA
 // #define DATA "../Groebner/1_130_22_8/"
@@ -36,11 +36,25 @@ using namespace std;
 // #define ROW 453
 // #endif
 
+// #ifndef DATA
+// #define DATA "../Groebner/6_3799_2759_1953/"
+// #define COL 3799
+// #define ELE 2759
+// #define ROW 1953
+// #endif
+
+// #ifndef DATA
+// #define DATA "../Groebner/7_8399_6375_4535/"
+// #define COL 8399
+// #define ELE 6375
+// #define ROW 4535
+// #endif
+
 #ifndef DATA
-#define DATA "../Groebner/6_3799_2759_1953/"
-#define COL 3799
-#define ELE 2759
-#define ROW 1953
+#define DATA "../Groebner/11_85401_5724_756/"
+#define COL 85401
+#define ELE 5724
+#define ROW 756
 #endif
 
 // #define DEBUG
