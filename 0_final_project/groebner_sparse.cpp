@@ -29,12 +29,12 @@ using namespace std;
 // #define ROW 53
 // #endif
 
-// #ifndef DATA
-// #define DATA "../Groebner/5_2362_1226_453/"
-// #define COL 2362
-// #define ELE 1226
-// #define ROW 453
-// #endif
+#ifndef DATA
+#define DATA "../Groebner/5_2362_1226_453/"
+#define COL 2362
+#define ELE 1226
+#define ROW 453
+#endif
 
 // #ifndef DATA
 // #define DATA "../Groebner/6_3799_2759_1953/"
@@ -50,12 +50,12 @@ using namespace std;
 // #define ROW 4535
 // #endif
 
-#ifndef DATA
-#define DATA "../Groebner/11_85401_5724_756/"
-#define COL 85401
-#define ELE 5724
-#define ROW 756
-#endif
+// #ifndef DATA
+// #define DATA "../Groebner/11_85401_5724_756/"
+// #define COL 85401
+// #define ELE 5724
+// #define ROW 756
+// #endif
 
 // #define DEBUG
 
@@ -98,10 +98,12 @@ void groebner_sparse(array<vector<mat_t>, COL> ele, array<vector<mat_t>, ROW> ro
                 {
                     row_i_p = row[i][pRow];
                     ele_j_p = ele[j][pEle];
-
+                    
                     pRow += row_i_p >= ele_j_p ? 1 : 0;
                     pEle += ele_j_p >= row_i_p ? 1 : 0;
-                    buffer[last] = max(row_i_p, ele_j_p);
+                    buffer[last] = row_i_p > ele_j_p ? row_i_p:ele_j_p;
+                    // buffer[last] = row_i_p;
+                    //last++;
                     last += row_i_p == ele_j_p ? 0 : 1;
                 }
 
