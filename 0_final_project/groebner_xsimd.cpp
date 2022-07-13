@@ -227,10 +227,10 @@ void groebner_new_simd(mat_t ele_tmp[COL][(COL / mat_L + 1) / 16 * 16 + 16], mat
                 int p=0;
                 for(; p <= COL / mat_L; p+=inc)
                 {
-                    ele_vec = mat_simd_t::load_unaligned(&ele_tmp[j][p]);
-                    row_vec = mat_simd_t::load_unaligned(&row_tmp[i][p]);
+                    ele_vec = mat_simd_t::load(&ele_tmp[j][p], Mode());
+                    row_vec = mat_simd_t::load(&row_tmp[i][p], Mode());
                     row_vec ^= ele_vec;
-                    xsimd::store_unaligned(&row_tmp[i][p], row_vec);
+                    xsimd::store(&row_tmp[i][p], row_vec, Mode());
                 }
                 for(; p <= COL / mat_L; p++)
                     row_tmp[i][p] ^= ele_tmp[j][p];
@@ -291,7 +291,7 @@ int main()
     // test(groebner_new, "common");
     // test(groebner_new_simd<xsimd::sse3, xsimd::unaligned_mode>, "avx");
     // test(groebner_new_simd<xsimd::avx, xsimd::unaligned_mode>, "avx");
-    test(groebner_new_simd<xsimd::avx2, xsimd::aligned_mode>, "avx");
+    test(groebner_new_simd<xsimd::avx512f, xsimd::aligned_mode>, "avx");
 #endif
     return 0;
 }
