@@ -71,22 +71,29 @@ using namespace std;
 #define mat_t unsigned int
 #define mat_L 32
 #define REPT 1
-
+#define LEN_LINE ((COL / mat_L + 1) / 16 * 16 + 16)
+#define SIMD_INST_SET xsimd::avx2
+#define SIMD_ALIGN xsimd::aligned_mode()
 // #define DEBUG
 
 int world_size, world_rank;
 
-void run_master(mat_t (*ele)[COL / mat_L + 1], mat_t (*row)[COL / mat_L + 1])
+void run_master(mat_t (*ele)[LEN_LINE], mat_t (*row)[LEN_LINE])
 {
     bool upgraded[ROW] = {0};
+
+    using mat_simd_t = xsimd::batch<unsigned int, SIMD_INST_SET>;
+    std::size_t simd_inc = mat_simd_t::size;
+    mat_simd_t ele_vec, row_vec;
+
     int n_workload = ROW / world_size + 1;
     for (int th = 1; th < world_size; th++)
     {
         int i_offset = n_workload * (th - 1);
-        MPI_Send(row + i_offset, n_workload * (COL / mat_L + 1) * sizeof(mat_t),
+        MPI_Send(row + i_offset, n_workload * (LEN_LINE) * sizeof(mat_t),
                  MPI_BYTE, th, 0, MPI_COMM_WORLD);
     }
-    MPI_Bcast(ele, COL * (COL / mat_L + 1) * sizeof(mat_t),
+    MPI_Bcast(ele, COL * (LEN_LINE) * sizeof(mat_t),
               MPI_BYTE, 0, MPI_COMM_WORLD);
 
     for (int j = COL - 1; j >= 0; j--)
@@ -101,8 +108,6 @@ void run_master(mat_t (*ele)[COL / mat_L + 1], mat_t (*row)[COL / mat_L + 1])
                 if (row[i][j / mat_L] & ((mat_t)1 << (j % mat_L)))
                 {
                     tobe_upgraded = i;
-                    // memcpy(ele[j], row[i], (COL / mat_L + 1) * sizeof(mat_t));
-                    // upgraded[i] = true;
                     break;
                 }
             }
@@ -114,21 +119,28 @@ void run_master(mat_t (*ele)[COL / mat_L + 1], mat_t (*row)[COL / mat_L + 1])
             int th_with_min = (real_upgraded / n_workload + 1) % world_size;
             if (tobe_upgraded != (1 << 31) - 1)
                 memcpy(ele[j], row[tobe_upgraded],
-                       (COL / mat_L + 1) * sizeof(mat_t));
-            MPI_Bcast(ele[j], (COL / mat_L + 1) * sizeof(mat_t),
+                       (LEN_LINE) * sizeof(mat_t));
+            MPI_Bcast(ele[j], (LEN_LINE) * sizeof(mat_t),
                       MPI_BYTE, th_with_min, MPI_COMM_WORLD);
             upgraded[real_upgraded] = true;
         }
         MPI_Barrier(MPI_COMM_WORLD);
-        // #pragma omp parallel for num_threads(2)
+        // #pragma omp parallel for num_threads(4)
         for (int i = n_workload * (world_size - 1); i < ROW; i++)
         { // 遍历被消元行
             if (upgraded[i])
                 continue;
             if (row[i][j / mat_L] & ((mat_t)1 << (j % mat_L)))
             { // 如果当前行需要消元
-                // #pragma omp simd
-                for (int p = 0; p <= COL / mat_L; p++)
+                int p = 0;
+                for (; p <= COL / mat_L; p += simd_inc)
+                {
+                    ele_vec = mat_simd_t::load(&ele[j][p], SIMD_ALIGN);
+                    row_vec = mat_simd_t::load(&row[i][p], SIMD_ALIGN);
+                    row_vec ^= ele_vec;
+                    xsimd::store(&row[i][p], row_vec, SIMD_ALIGN);
+                }
+                for (; p <= COL / mat_L; p++)
                     row[i][p] ^= ele[j][p];
             }
         }
@@ -136,9 +148,9 @@ void run_master(mat_t (*ele)[COL / mat_L + 1], mat_t (*row)[COL / mat_L + 1])
     }
 
     for (int th = 1; th < world_size; th++)
-    {
+    { // 回收被消元行
         int i_offset = n_workload * (th - 1);
-        MPI_Recv(row + i_offset, n_workload * (COL / mat_L + 1) * sizeof(mat_t),
+        MPI_Recv(row + i_offset, n_workload * (LEN_LINE) * sizeof(mat_t),
                  MPI_BYTE, th, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
 
@@ -152,20 +164,25 @@ void run_master(mat_t (*ele)[COL / mat_L + 1], mat_t (*row)[COL / mat_L + 1])
     }
 #endif
 }
+
 void run_slave()
 {
     bool upgraded[ROW] = {0};
     int n_workload = ROW / world_size + 1;
     int i_offset = n_workload * (world_rank - 1);
 
-    mat_t(*ele)[COL / mat_L + 1] =
-        (mat_t(*)[COL / mat_L + 1]) malloc(sizeof(mat_t) * COL * (COL / mat_L + 1));
-    mat_t(*row)[COL / mat_L + 1] =
-        (mat_t(*)[COL / mat_L + 1]) malloc(n_workload * (COL / mat_L + 1) * sizeof(mat_t));
-    MPI_Recv(row, n_workload * (COL / mat_L + 1) * sizeof(mat_t),
+    using mat_simd_t = xsimd::batch<unsigned int, SIMD_INST_SET>;
+    std::size_t simd_inc = mat_simd_t::size;
+    mat_simd_t ele_vec, row_vec;
+
+    mat_t(*ele)[LEN_LINE] =
+        (mat_t(*)[LEN_LINE])aligned_alloc(128, sizeof(mat_t) * COL * (LEN_LINE));
+    mat_t(*row)[LEN_LINE] =
+        (mat_t(*)[LEN_LINE])aligned_alloc(128, n_workload * (LEN_LINE) * sizeof(mat_t));
+    MPI_Recv(row, n_workload * (LEN_LINE) * sizeof(mat_t),
              MPI_BYTE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-    MPI_Bcast(ele, COL * (COL / mat_L + 1) * sizeof(mat_t),
+    MPI_Bcast(ele, COL * (LEN_LINE) * sizeof(mat_t),
               MPI_BYTE, 0, MPI_COMM_WORLD);
 
     for (int j = COL - 1; j >= 0; j--)
@@ -180,7 +197,7 @@ void run_slave()
                 if (row[i][j / mat_L] & ((mat_t)1 << (j % mat_L)))
                 {
                     tobe_upgraded = i + i_offset;
-                    // memcpy(ele[j], row[i], (COL / mat_L + 1) * sizeof(mat_t));
+                    // memcpy(ele[j], row[i], (LEN_LINE) * sizeof(mat_t));
                     // upgraded[i] = true;
                     break;
                 }
@@ -193,46 +210,52 @@ void run_slave()
             int th_with_min = (real_upgraded / n_workload + 1) % world_size;
             if (tobe_upgraded != (1 << 31) - 1)
                 memcpy(ele[j], row[tobe_upgraded - i_offset],
-                       (COL / mat_L + 1) * sizeof(mat_t));
-            MPI_Bcast(ele[j], (COL / mat_L + 1) * sizeof(mat_t),
+                       (LEN_LINE) * sizeof(mat_t));
+            MPI_Bcast(ele[j], (LEN_LINE) * sizeof(mat_t),
                       MPI_BYTE, th_with_min, MPI_COMM_WORLD);
             upgraded[real_upgraded] = true;
         }
         MPI_Barrier(MPI_COMM_WORLD);
+        // #pragma omp parallel for num_threads(4)
         for (int i = i_offset; i < i_offset + n_workload; i++)
         {
             if (upgraded[i])
                 continue;
             if (row[i - i_offset][j / mat_L] & ((mat_t)1 << (j % mat_L)))
             { // 如果当前行需要消元
-                // #pragma omp simd
-                for (int p = 0; p <= COL / mat_L; p++)
+                int p = 0;
+                for (; p <= COL / mat_L; p += simd_inc)
+                {
+                    ele_vec = mat_simd_t::load(&ele[j][p], SIMD_ALIGN);
+                    row_vec = mat_simd_t::load(&row[i - i_offset][p], SIMD_ALIGN);
+                    row_vec ^= ele_vec;
+                    xsimd::store(&row[i - i_offset][p], row_vec, SIMD_ALIGN);
+                }
+                for (; p <= COL / mat_L; p++)
                     row[i - i_offset][p] ^= ele[j][p];
             }
         }
         MPI_Barrier(MPI_COMM_WORLD);
     }
 
-    MPI_Send(row, n_workload * (COL / mat_L + 1) * sizeof(mat_t),
+    MPI_Send(row, n_workload * (LEN_LINE) * sizeof(mat_t),
              MPI_BYTE, 0, 1, MPI_COMM_WORLD);
 }
 
 int main()
 {
-    MPI_Init(NULL, NULL);
-
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
     if (world_rank == 0)
     {
-        mat_t(*ele)[COL / mat_L + 1] =
-            (mat_t(*)[COL / mat_L + 1]) malloc(sizeof(mat_t) * COL * (COL / mat_L + 1));
-        mat_t(*row)[COL / mat_L + 1] =
-            (mat_t(*)[COL / mat_L + 1]) malloc(sizeof(mat_t) * ROW * (COL / mat_L + 1));
+        mat_t(*ele)[LEN_LINE] =
+            (mat_t(*)[LEN_LINE])aligned_alloc(128, sizeof(mat_t) * COL * (LEN_LINE));
+        mat_t(*row)[LEN_LINE] =
+            (mat_t(*)[LEN_LINE])aligned_alloc(128, sizeof(mat_t) * ROW * (LEN_LINE));
 
-        memset(ele, 0, sizeof(mat_t) * COL * (COL / mat_L + 1));
-        memset(row, 0, sizeof(mat_t) * ROW * (COL / mat_L + 1));
+        memset(ele, 0, sizeof(mat_t) * COL * (LEN_LINE));
+        memset(row, 0, sizeof(mat_t) * ROW * (LEN_LINE));
 
         ifstream data_ele((string)DATA + (string) "1.txt", ios::in);
         int temp, header;
